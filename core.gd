@@ -1,6 +1,17 @@
 extends RefCounted
 
+const NodeManager = preload("res://addons/vioreto/node.gd")
+
 const PRELOAD_SCENE = 20
+
+static func run(options):
+	var controller = Controller.new()
+	var script_path = options.script_path
+	var action_id = options.action_id
+	controller.stage = Stage.new(script_path, {}, options.node)
+	controller.load(script_path, action_id)
+	controller.run()
+	return controller
 
 class Controller:
 	var error_handler: Callable
@@ -11,10 +22,10 @@ class Controller:
 	func _init(_error_handler: Callable = func(): printerr("load")):
 		error_handler = _error_handler
 		
-	func load(script_path: String, action_id: String, state = {}):
+	func load(script_path: String, action_id: String):
 		var parent_path = script_path.get_base_dir()
 		if is_vaild_load_params(script_path, action_id):
-			prepare(script_path, action_id, state)
+			prepare(script_path, action_id)
 			return
 		var file_list = DirAccess.get_files_at(parent_path)
 		for name in file_list:
@@ -22,7 +33,7 @@ class Controller:
 				continue
 			var path = parent_path + "/" + name
 			if is_vaild_load_params(path, action_id):
-				prepare(path, action_id, state)
+				prepare(path, action_id)
 				return
 		if error_handler:
 			error_handler.call()
@@ -37,12 +48,10 @@ class Controller:
 		var instance = load(script_path).new()
 		return instance.action_id_list.find(action_id)
 		
-	func prepare(script_path: String, action_id: String, state: Dictionary):
-		stage = Stage.new(script_path, state)
+	func prepare(script_path: String, action_id: String):
 		load_resource(script_path)
 		var index = get_start_action_index(script_path, action_id)
 		action_list = action_list.slice(index)
-		run()
 		
 	func run():
 		for i in range(PRELOAD_SCENE):
@@ -95,7 +104,8 @@ class End extends Action:
 		
 class Stage:
 	var script_path: String
-	var scene_list: Array[Scene] = []
+#	var scene_list: Array[Scene] = []
+	var node: NodeManager
 	
 #	var go_to_map
 	var character_map: Dictionary
@@ -103,9 +113,11 @@ class Stage:
 	
 	var state: Dictionary
 	
-	func _init(_script_path: String, _state: Dictionary):
+	func _init(_script_path: String, _state: Dictionary, nodeOptions: Dictionary):
 		script_path = _script_path
 		state = _state
+		var text_container = nodeOptions.text_container
+		node = NodeManager.new(text_container)
 		load_stage_data()
 		
 	func load_stage_data():
@@ -131,10 +143,12 @@ class Stage:
 	func load_scene(handler: Callable):
 		var scene= Scene.new(self)
 		handler.call(scene)
-		scene_list.append(scene)
+		node.build(scene)
+#		scene_list.append(scene)
 		
 	func refresh():
-		var scene = scene_list.pop_front()
+		node.add_to_tree()
+#		var scene = scene_list.pop_front()
 		pass
 		
 	
