@@ -1,6 +1,6 @@
 extends RefCounted
 
-const NodeManager = preload("res://addons/vioreto/node.gd")
+class_name Core
 
 const PRELOAD_SCENE = 20
 
@@ -169,10 +169,10 @@ class Scene:
 		else:
 			speaker_id_list = [speaker_id]
 			
-		speaker_list = speaker_id_list.map(
+		speaker_list.assign(speaker_id_list.map(
 			func (id):
 				return Character.new(id, stage.character_map[id][Vioreto.get_config("locale")])
-		)
+		))
 		text_list = [Text.new(stage.text_map[text_id])]
 		print(Util.array_to_string(speaker_list.map(func (s): return s.name)),":",Util.array_to_string(text_list.map(func (s): return s.content)))
 		

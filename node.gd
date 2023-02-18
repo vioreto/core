@@ -1,6 +1,6 @@
 extends RefCounted
 
-const Core = preload("res://addons/vioreto/core.gd")
+class_name NodeManager
 
 var scene_node_list = []
 

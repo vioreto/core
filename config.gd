@@ -1,5 +1,7 @@
 extends RefCounted
 
+class_name Config
+
 var data = {
 	"locale": "zh-CN"
 }
