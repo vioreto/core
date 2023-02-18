@@ -3,7 +3,9 @@ extends RefCounted
 class_name Config
 
 var data = {
-	"locale": "zh-CN"
+	"multipleLanguageMode": true,
+	"locale": "zh-CN",
+	"secondaryLocale": "ja"
 }
 
 func get_config(id: String):

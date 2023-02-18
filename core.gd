@@ -100,16 +100,19 @@ class Action:
 		
 class End extends Action:
 	func _init():
-		super(func(s): print("end"))
+		super(
+			func(s): 
+				s.type = "end"
+				print("end")
+		)
 		
 class Stage:
 	var script_path: String
-#	var scene_list: Array[Scene] = []
 	var node: NodeManager
 	
 #	var go_to_map
 	var character_map: Dictionary
-	var text_map: Dictionary
+	var text_map = {}
 	
 	var state: Dictionary
 	
@@ -125,13 +128,18 @@ class Stage:
 		var stage_path = parent_path + "/stage.gd"
 		var stage_data = load(stage_path).new()
 		character_map = stage_data.character_map
-#		go_to_map = _go_to_map
 
 	func load_locale_text(_script_path: String):
 		script_path = _script_path
 		var index = script_path.find(".")
-		var text_path = script_path.substr(0, index) + "." + Vioreto.get_config("locale") + script_path.substr(index)
-		text_map = load(text_path).new().text_map
+		var locale = Vioreto.get_config("locale")
+		var get_text_path =  func(locale: String):
+			return script_path.substr(0, index) + "." + locale + script_path.substr(index)
+		text_map[locale] = load(get_text_path.call(locale)).new().text_map
+		if Vioreto.get_config("multipleLanguageMode"):
+			var secondaryLocale = Vioreto.get_config("secondaryLocale")
+			text_map[secondaryLocale] = load(get_text_path.call(secondaryLocale)).new().text_map
+			
 		
 	func get_next_script_path():
 		var regex = RegEx.new()
@@ -144,16 +152,15 @@ class Stage:
 		var scene= Scene.new(self)
 		handler.call(scene)
 		node.build(scene)
-#		scene_list.append(scene)
 		
 	func refresh():
 		node.add_to_tree()
-#		var scene = scene_list.pop_front()
-		pass
 		
 	
 class Scene:
 	var stage: Stage
+	
+	var type: String
 	
 	var speaker_list: Array[Character] = []
 	var text_list: Array[Text] = []
@@ -161,6 +168,9 @@ class Scene:
 	
 	func _init(_stage: Stage):
 		stage = _stage
+		
+	func is_end():
+		return type == "end"
 	
 	func speak(speaker_id, text_id):
 		var speaker_id_list = []
@@ -169,12 +179,16 @@ class Scene:
 		else:
 			speaker_id_list = [speaker_id]
 			
+		var locale = Vioreto.get_config("locale")
 		speaker_list.assign(speaker_id_list.map(
 			func (id):
-				return Character.new(id, stage.character_map[id][Vioreto.get_config("locale")])
+				return Character.new(id, stage.character_map[id][locale])
 		))
-		text_list = [Text.new(stage.text_map[text_id])]
-		print(Util.array_to_string(speaker_list.map(func (s): return s.name)),":",Util.array_to_string(text_list.map(func (s): return s.content)))
+		text_list = [Text.new(stage.text_map[locale][text_id])]
+		if Vioreto.get_config("multipleLanguageMode"):
+			var secondaryLocale = Vioreto.get_config("secondaryLocale")
+			text_list.append(Text.new(stage.text_map[secondaryLocale][text_id]))
+			print(Util.array_to_string(speaker_list.map(func (s): return s.name)),":",Util.array_to_string(text_list.map(func (s): return s.content)))
 		
 
 	func show_character(character):
@@ -193,7 +207,7 @@ class Scene:
 		scene.tachie_list.clear()
 
 class Text:
-	var content
+	var content: String
 	
 	func _init(_content = ""):
 		content = _content
